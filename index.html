@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英语单词消消乐</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .bg-decoration {
+            position: absolute;
+            opacity: 0.1;
+            z-index: -1;
+        }
+
+        .bg-decoration-1 {
+            top: 10%;
+            left: 5%;
+            font-size: 120px;
+            color: #4a6fa5;
+        }
+
+        .bg-decoration-2 {
+            bottom: 10%;
+            right: 5%;
+            font-size: 100px;
+            color: #4a6fa5;
+        }
+
+        .bg-decoration-3 {
+            top: 40%;
+            right: 10%;
+            font-size: 80px;
+            color: #4a6fa5;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #4a6fa5;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 2px solid #e1e8f0;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-item h2 {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .info-item p {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4a6fa5;
+        }
+
+        .difficulty-selector {
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .difficulty-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            background-color: #e1e8f0;
+            color: #333;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .difficulty-btn.active {
+            background-color: #4a6fa5;
+            color: white;
+            box-shadow: 0 2px 8px rgba(74, 111, 165, 0.3);
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            max-width: 600px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            aspect-ratio: 1;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 2px solid #e1e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            animation: cardEntry 0.5s ease forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            border-color: #4a6fa5;
+        }
+
+        .card.flipped {
+            background-color: #e1e8f0;
+            transform: scale(0.95);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-color: #4a6fa5;
+        }
+
+        .card.matched {
+            background-color: #d4edda;
+            animation: matchSuccess 0.5s ease forwards;
+            pointer-events: none;
+        }
+
+        @keyframes matchSuccess {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05) rotate(3deg); background-color: #c3e6cb; }
+            100% { opacity: 0; transform: scale(0.8); }
+        }
+
+        @keyframes cardEntry {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card.wrong {
+            animation: shake 0.3s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.8); }
+        }
+
+        .restart-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            background-color: #4a6fa5;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .restart-btn:hover {
+            background-color: #3a5a85;
+            box-shadow: 0 4px 12px rgba(74, 111, 165, 0.3);
+        }
+
+        .game-over-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .game-over-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .modal-content h2 {
+            font-size: 2rem;
+            color: #4a6fa5;
+            margin-bottom: 20px;
+        }
+
+        .modal-content p {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        .modal-content .final-score {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #4a6fa5;
+            margin: 20px 0;
+        }
+
+        .modal-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            background-color: #4a6fa5;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .modal-btn:hover {
+            background-color: #3a5a85;
+            box-shadow: 0 4px 12px rgba(74, 111, 165, 0.3);
+        }
+
+        .word-info-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .word-info-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .word-info-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .word-info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e1e8f0;
+        }
+
+        .word-info-header h3 {
+            font-size: 1.5rem;
+            color: #4a6fa5;
+            margin: 0;
+        }
+
+        .word-info-header button {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .word-info-header button:hover {
+            color: #4a6fa5;
+        }
+
+        .word-phonetic {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .word-phonetic .phonetic {
+            font-style: italic;
+            color: #666;
+        }
+
+        .play-pronunciation {
+            background-color: #4a6fa5;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .play-pronunciation:hover {
+            background-color: #3a5a85;
+            transform: scale(1.1);
+        }
+
+        .word-definitions {
+            margin-bottom: 20px;
+        }
+
+        .definition-item {
+            margin-bottom: 15px;
+            padding-left: 20px;
+            border-left: 3px solid #4a6fa5;
+        }
+
+        .part-of-speech {
+            font-weight: bold;
+            color: #4a6fa5;
+            margin-bottom: 5px;
+        }
+
+        .definition {
+            margin-bottom: 5px;
+        }
+
+        .example {
+            font-style: italic;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .word-error {
+            color: #dc3545;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .word-error-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .game-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .game-board {
+                gap: 10px;
+            }
+
+            .card {
+                font-size: 0.9rem;
+            }
+
+            .difficulty-btn {
+                padding: 8px 16px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-decoration bg-decoration-1">📚</div>
+    <div class="bg-decoration bg-decoration-2">🎮</div>
+    <div class="bg-decoration bg-decoration-3">🌟</div>
+    
+    <h1>英语单词消消乐</h1>
+    
+    <div class="difficulty-selector">
+        <button class="difficulty-btn active" data-level="bronze">🥉 青铜 (4对)</button>
+        <button class="difficulty-btn" data-level="silver">🥈 白银 (6对)</button>
+        <button class="difficulty-btn" data-level="gold">🥇 黄金 (8对)</button>
+        <button class="difficulty-btn" data-level="custom">✏️ 自定义单词</button>
+        <button class="difficulty-btn" data-level="custom-random">🎲 自定义设置</button>
+        <button class="difficulty-btn" data-level="challenge">🏆 挑战模式</button>
+    </div>
+
+    <div class="custom-settings-section" id="customSettingsSection" style="display: none; margin-bottom: 20px; padding: 20px; background-color: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid #e1e8f0; width: 100%; max-width: 600px;">
+        <h3>🎲 自定义游戏设置</h3>
+        <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px;">
+            <div style="flex: 1; min-width: 150px;">
+                <label style="display: block; margin-bottom: 5px; color: #666;">⏰ 游戏时间（秒）：</label>
+                <input type="number" id="customRandomTimeInput" min="10" max="300" value="60" style="width: 100%; padding: 8px; border: 1px solid #e1e8f0; border-radius: 8px;">
+            </div>
+            <div style="flex: 1; min-width: 150px;">
+                <label style="display: block; margin-bottom: 5px; color: #666;">🎯 单词对数：</label>
+                <input type="number" id="customRandomPairsInput" min="2" max="30" value="4" style="width: 100%; padding: 8px; border: 1px solid #e1e8f0; border-radius: 8px;">
+            </div>
+            <div style="flex: 1; min-width: 150px;">
+                <label style="display: block; margin-bottom: 5px; color: #666;">📚 单词难度：</label>
+                <select id="wordDifficultySelect" style="width: 100%; padding: 8px; border: 1px solid #e1e8f0; border-radius: 8px;">
+                    <option value="all">全部难度</option>
+                    <option value="easy">简单</option>
+                    <option value="medium">中等</option>
+                    <option value="hard">困难</option>
+                </select>
+            </div>
+        </div>
+        <p style="color: #666; margin-bottom: 15px;">游戏将从默认单词库中随机选择单词。</p>
+        <button id="startCustomRandomGameBtn" class="modal-btn" style="margin-top: 15px;">开始游戏</button>
+    </div>
+
+    <div class="custom-words-section" id="customWordsSection" style="display: none; margin-bottom: 20px; padding: 20px; background-color: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid #e1e8f0; width: 100%; max-width: 600px;">
+        <h3>✏️ 自定义单词设置</h3>
+        <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+            <div style="flex: 1;">
+                <label style="display: block; margin-bottom: 5px; color: #666;">⏰ 游戏时间（秒）：</label>
+                <input type="number" id="customTimeInput" min="10" max="300" value="60" style="width: 100%; padding: 8px; border: 1px solid #e1e8f0; border-radius: 8px;">
+            </div>
+            <div style="flex: 1;">
+                <label style="display: block; margin-bottom: 5px; color: #666;">🎯 单词对数：</label>
+                <input type="number" id="customPairsInput" min="2" max="30" value="4" style="width: 100%; padding: 8px; border: 1px solid #e1e8f0; border-radius: 8px;">
+            </div>
+        </div>
+        <p style="margin-bottom: 10px; color: #666;">请输入单词对（英文和中文，每行一对，用空格或逗号分隔）：</p>
+        <textarea id="customWordsInput" rows="5" style="width: 100%; padding: 10px; border: 1px solid #e1e8f0; border-radius: 8px; font-family: 'Microsoft YaHei', sans-serif; font-size: 1rem;"></textarea>
+        <p style="margin-top: 10px; color: #666; font-size: 0.9rem;">示例：apple 苹果
+cat 猫
+dog 狗</p>
+        <button id="startCustomGameBtn" class="modal-btn" style="margin-top: 15px;">开始游戏</button>
+    </div>
+
+    <div class="challenge-settings-section" id="challengeSettingsSection" style="display: none; margin-bottom: 20px; padding: 20px; background-color: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid #e1e8f0; width: 100%; max-width: 600px;">
+        <h3>🏆 挑战模式设置</h3>
+        <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px;">
+            <div style="flex: 1; min-width: 150px;">
+                <label style="display: block; margin-bottom: 5px; color: #666;">⏰ 游戏时间（秒）：</label>
+                <input type="number" id="challengeTimeInput" min="30" max="300" value="60" style="width: 100%; padding: 8px; border: 1px solid #e1e8f0; border-radius: 8px;">
+            </div>
+            <div style="flex: 1; min-width: 150px;">
+                <label style="display: block; margin-bottom: 5px; color: #666;">🎯 目标配对数：</label>
+                <input type="number" id="challengeTargetPairsInput" min="3" max="30" value="6" style="width: 100%; padding: 8px; border: 1px solid #e1e8f0; border-radius: 8px;">
+            </div>
+            <div style="flex: 1; min-width: 150px;">
+                <label style="display: block; margin-bottom: 5px; color: #666;">📚 单词难度：</label>
+                <select id="challengeDifficultySelect" style="width: 100%; padding: 8px; border: 1px solid #e1e8f0; border-radius: 8px;">
+                    <option value="all">全部难度</option>
+                    <option value="easy">简单</option>
+                    <option value="medium">中等</option>
+                    <option value="hard">困难</option>
+                </select>
+            </div>
+        </div>
+        <p style="color: #666; margin-bottom: 15px;">挑战：在规定时间内完成目标配对数！游戏将使用比目标多2对的单词。</p>
+        <button id="startChallengeGameBtn" class="modal-btn" style="margin-top: 15px;">开始挑战</button>
+    </div>
+
+    <div class="game-info">
+        <div class="info-item">
+            <h2>🏆 得分</h2>
+            <p id="score">0</p>
+        </div>
+        <div class="info-item">
+            <h2>⏰ 时间</h2>
+            <p id="timer">60</p>
+        </div>
+        <div class="info-item">
+            <h2>🔍 剩余配对</h2>
+            <p id="remaining">8</p>
+        </div>
+    </div>
+
+    <div class="game-board" id="gameBoard"></div>
+
+    <button class="restart-btn" id="restartBtn">🔄 重新开始</button>
+
+    <div class="game-over-modal" id="gameOverModal">
+        <div class="modal-content">
+            <h2>🎮 游戏结束</h2>
+            <p>你的得分</p>
+            <p class="final-score" id="finalScore">0</p>
+            <p id="gameResult"></p>
+            <button class="modal-btn" id="playAgainBtn">🔄 再玩一次</button>
+        </div>
+    </div>
+
+    <div class="word-info-modal" id="wordInfoModal">
+        <div class="word-info-content">
+            <div class="word-info-header">
+                <h3 id="wordInfoTitle"></h3>
+                <button id="closeWordInfoBtn">&times;</button>
+            </div>
+            <div id="wordInfoContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let wordLibrary = [];
+        let isLoading = false;
+        
+        const defaultWordLibrary = [
+            // 简单难度 - 30个
+            { english: 'apple', chinese: '苹果', difficulty: 'easy' },
+            { english: 'cat', chinese: '猫', difficulty: 'easy' },
+            { english: 'dog', chinese: '狗', difficulty: 'easy' },
+            { english: 'book', chinese: '书', difficulty: 'easy' },
+            { english: 'pen', chinese: '钢笔', difficulty: 'easy' },
+            { english: 'cup', chinese: '杯子', difficulty: 'easy' },
+            { english: 'tree', chinese: '树', difficulty: 'easy' },
+            { english: 'bird', chinese: '鸟', difficulty: 'easy' },
+            { english: 'fish', chinese: '鱼', difficulty: 'easy' },
+            { english: 'milk', chinese: '牛奶', difficulty: 'easy' },
+            { english: 'sun', chinese: '太阳', difficulty: 'easy' },
+            { english: 'moon', chinese: '月亮', difficulty: 'easy' },
+            { english: 'star', chinese: '星星', difficulty: 'easy' },
+            { english: 'water', chinese: '水', difficulty: 'easy' },
+            { english: 'fire', chinese: '火', difficulty: 'easy' },
+            { english: 'rain', chinese: '雨', difficulty: 'easy' },
+            { english: 'snow', chinese: '雪', difficulty: 'easy' },
+            { english: 'wind', chinese: '风', difficulty: 'easy' },
+            { english: 'flower', chinese: '花', difficulty: 'easy' },
+            { english: 'grass', chinese: '草', difficulty: 'easy' },
+            { english: 'house', chinese: '房子', difficulty: 'easy' },
+            { english: 'door', chinese: '门', difficulty: 'easy' },
+            { english: 'window', chinese: '窗户', difficulty: 'easy' },
+            { english: 'chair', chinese: '椅子', difficulty: 'easy' },
+            { english: 'table', chinese: '桌子', difficulty: 'easy' },
+            { english: 'clock', chinese: '时钟', difficulty: 'easy' },
+            { english: 'phone', chinese: '手机', difficulty: 'easy' },
+            { english: 'bag', chinese: '包', difficulty: 'easy' },
+            { english: 'shoe', chinese: '鞋子', difficulty: 'easy' },
+            { english: 'hat', chinese: '帽子', difficulty: 'easy' },
+            
+            // 中等难度 - 40个
+            { english: 'car', chinese: '汽车', difficulty: 'medium' },
+            { english: 'teacher', chinese: '老师', difficulty: 'medium' },
+            { english: 'student', chinese: '学生', difficulty: 'medium' },
+            { english: 'computer', chinese: '电脑', difficulty: 'medium' },
+            { english: 'telephone', chinese: '电话', difficulty: 'medium' },
+            { english: 'television', chinese: '电视', difficulty: 'medium' },
+            { english: 'bicycle', chinese: '自行车', difficulty: 'medium' },
+            { english: 'umbrella', chinese: '雨伞', difficulty: 'medium' },
+            { english: 'camera', chinese: '相机', difficulty: 'medium' },
+            { english: 'paper', chinese: '纸', difficulty: 'medium' },
+            { english: 'music', chinese: '音乐', difficulty: 'medium' },
+            { english: 'movie', chinese: '电影', difficulty: 'medium' },
+            { english: 'photo', chinese: '照片', difficulty: 'medium' },
+            { english: 'city', chinese: '城市', difficulty: 'medium' },
+            { english: 'river', chinese: '河流', difficulty: 'medium' },
+            { english: 'mountain', chinese: '山', difficulty: 'medium' },
+            { english: 'ocean', chinese: '海洋', difficulty: 'medium' },
+            { english: 'forest', chinese: '森林', difficulty: 'medium' },
+            { english: 'desert', chinese: '沙漠', difficulty: 'medium' },
+            { english: 'island', chinese: '岛屿', difficulty: 'medium' },
+            { english: 'garden', chinese: '花园', difficulty: 'medium' },
+            { english: 'bridge', chinese: '桥梁', difficulty: 'medium' },
+            { english: 'castle', chinese: '城堡', difficulty: 'medium' },
+            { english: 'train', chinese: '火车', difficulty: 'medium' },
+            { english: 'airplane', chinese: '飞机', difficulty: 'medium' },
+            { english: 'ship', chinese: '船', difficulty: 'medium' },
+            { english: 'bus', chinese: '公共汽车', difficulty: 'medium' },
+            { english: 'taxi', chinese: '出租车', difficulty: 'medium' },
+            { english: 'hospital', chinese: '医院', difficulty: 'medium' },
+            { english: 'restaurant', chinese: '餐厅', difficulty: 'medium' },
+            { english: 'hotel', chinese: '酒店', difficulty: 'medium' },
+            { english: 'bank', chinese: '银行', difficulty: 'medium' },
+            { english: 'park', chinese: '公园', difficulty: 'medium' },
+            { english: 'beach', chinese: '海滩', difficulty: 'medium' },
+            { english: 'lake', chinese: '湖泊', difficulty: 'medium' },
+            { english: 'zoo', chinese: '动物园', difficulty: 'medium' },
+            { english: 'museum', chinese: '博物馆', difficulty: 'medium' },
+            { english: 'theater', chinese: '剧院', difficulty: 'medium' },
+            { english: 'library', chinese: '图书馆', difficulty: 'medium' },
+            { english: 'station', chinese: '车站', difficulty: 'medium' },
+            { english: 'airport', chinese: '机场', difficulty: 'medium' },
+            
+            // 困难难度 - 40个
+            { english: 'happy', chinese: '快乐', difficulty: 'hard' },
+            { english: 'school', chinese: '学校', difficulty: 'hard' },
+            { english: 'supermarket', chinese: '超市', difficulty: 'hard' },
+            { english: 'apartment', chinese: '公寓', difficulty: 'hard' },
+            { english: 'university', chinese: '大学', difficulty: 'hard' },
+            { english: 'beautiful', chinese: '美丽的', difficulty: 'hard' },
+            { english: 'wonderful', chinese: '精彩的', difficulty: 'hard' },
+            { english: 'important', chinese: '重要的', difficulty: 'hard' },
+            { english: 'different', chinese: '不同的', difficulty: 'hard' },
+            { english: 'difficult', chinese: '困难的', difficulty: 'hard' },
+            { english: 'dangerous', chinese: '危险的', difficulty: 'hard' },
+            { english: 'comfortable', chinese: '舒适的', difficulty: 'hard' },
+            { english: 'expensive', chinese: '昂贵的', difficulty: 'hard' },
+            { english: 'chocolate', chinese: '巧克力', difficulty: 'hard' },
+            { english: 'vegetable', chinese: '蔬菜', difficulty: 'hard' },
+            { english: 'adventure', chinese: '冒险', difficulty: 'hard' },
+            { english: 'celebrate', chinese: '庆祝', difficulty: 'hard' },
+            { english: 'communicate', chinese: '交流', difficulty: 'hard' },
+            { english: 'environment', chinese: '环境', difficulty: 'hard' },
+            { english: 'government', chinese: '政府', difficulty: 'hard' },
+            { english: 'understand', chinese: '理解', difficulty: 'hard' },
+            { english: 'traditional', chinese: '传统的', difficulty: 'hard' },
+            { english: 'knowledge', chinese: '知识', difficulty: 'hard' },
+            { english: 'experience', chinese: '经验', difficulty: 'hard' },
+            { english: 'opportunity', chinese: '机会', difficulty: 'hard' },
+            { english: 'restaurant', chinese: '餐厅', difficulty: 'hard' },
+            { english: 'competition', chinese: '比赛', difficulty: 'hard' },
+            { english: 'temperature', chinese: '温度', difficulty: 'hard' },
+            { english: 'population', chinese: '人口', difficulty: 'hard' },
+            { english: 'situation', chinese: '情况', difficulty: 'hard' },
+            { english: 'generation', chinese: '一代人', difficulty: 'hard' },
+            { english: 'relationship', chinese: '关系', difficulty: 'hard' },
+            { english: 'development', chinese: '发展', difficulty: 'hard' },
+            { english: 'information', chinese: '信息', difficulty: 'hard' },
+            { english: 'education', chinese: '教育', difficulty: 'hard' },
+            { english: 'application', chinese: '申请', difficulty: 'hard' },
+            { english: 'organization', chinese: '组织', difficulty: 'hard' },
+            { english: 'responsibility', chinese: '责任', difficulty: 'hard' },
+            { english: 'possibility', chinese: '可能性', difficulty: 'hard' },
+            { english: 'technology', chinese: '技术', difficulty: 'hard' },
+            { english: 'conversation', chinese: '对话', difficulty: 'hard' }
+        ];
+        
+        function showLoading() {
+            isLoading = true;
+            const loadingElement = document.createElement('div');
+            loadingElement.id = 'loading';
+            loadingElement.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+                z-index: 1001;
+                font-size: 1.2rem;
+                color: #4a6fa5;
+            `;
+            loadingElement.textContent = '正在加载单词数据...';
+            document.body.appendChild(loadingElement);
+        }
+        
+        function hideLoading() {
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) {
+                loadingElement.remove();
+            }
+            isLoading = false;
+        }
+        
+        function useDefaultWordLibrary() {
+            wordLibrary = [...defaultWordLibrary];
+            console.log('使用默认单词库，共', wordLibrary.length, '个单词');
+            initGame();
+        }
+        
+        async function fetchWordData() {
+            showLoading();
+            
+            try {
+                const words = [
+                    { english: 'apple', chinese: '苹果', difficulty: 'easy' },
+                    { english: 'banana', chinese: '香蕉', difficulty: 'easy' },
+                    { english: 'cherry', chinese: '樱桃', difficulty: 'easy' },
+                    { english: 'date', chinese: '枣', difficulty: 'easy' },
+                    { english: 'grape', chinese: '葡萄', difficulty: 'easy' },
+                    { english: 'lemon', chinese: '柠檬', difficulty: 'easy' },
+                    { english: 'orange', chinese: '橙子', difficulty: 'easy' },
+                    { english: 'peach', chinese: '桃子', difficulty: 'easy' },
+                    { english: 'strawberry', chinese: '草莓', difficulty: 'easy' },
+                    { english: 'watermelon', chinese: '西瓜', difficulty: 'easy' },
+                    { english: 'kiwi', chinese: '猕猴桃', difficulty: 'medium' },
+                    { english: 'mango', chinese: '芒果', difficulty: 'medium' },
+                    { english: 'avocado', chinese: '鳄梨', difficulty: 'medium' },
+                    { english: 'blueberry', chinese: '蓝莓', difficulty: 'medium' },
+                    { english: 'coconut', chinese: '椰子', difficulty: 'medium' },
+                    { english: 'dragon fruit', chinese: '火龙果', difficulty: 'medium' },
+                    { english: 'grapefruit', chinese: '西柚', difficulty: 'medium' },
+                    { english: 'jackfruit', chinese: '菠萝蜜', difficulty: 'hard' },
+                    { english: 'lychee', chinese: '荔枝', difficulty: 'medium' },
+                    { english: 'papaya', chinese: '木瓜', difficulty: 'medium' },
+                    { english: 'passion fruit', chinese: '百香果', difficulty: 'medium' },
+                    { english: 'persimmon', chinese: '柿子', difficulty: 'medium' },
+                    { english: 'pomegranate', chinese: '石榴', difficulty: 'medium' },
+                    { english: 'quince', chinese: '榅桲', difficulty: 'hard' },
+                    { english: 'raspberry', chinese: '树莓', difficulty: 'medium' },
+                    { english: 'star fruit', chinese: '杨桃', difficulty: 'hard' },
+                    { english: 'tangerine', chinese: '橘子', difficulty: 'medium' },
+                    { english: 'elderberry', chinese: '接骨木果', difficulty: 'medium' },
+                    { english: 'fig', chinese: '无花果', difficulty: 'medium' },
+                    { english: 'honeydew', chinese: '哈密瓜', difficulty: 'medium' }
+                ];
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                wordLibrary = [...defaultWordLibrary, ...words];
+                console.log('从API获取单词数据成功，共', wordLibrary.length, '个单词');
+                hideLoading();
+                initGame();
+            } catch (error) {
+                console.error('获取单词数据失败:', error);
+                hideLoading();
+                useDefaultWordLibrary();
+            }
+        }
+
+        let gameState = {
+            level: 'bronze',
+            score: 0,
+            timeLeft: 60,
+            remainingPairs: 8,
+            flippedCards: [],
+            matchedPairs: 0,
+            isProcessing: false,
+            timerInterval: null,
+            timerStarted: false,
+            customWords: [],
+            isCustomMode: false,
+            customTime: 60,
+            customPairs: 4,
+            customRandomTime: 60,
+            customRandomPairs: 4,
+            wordDifficulty: 'all',
+            challengeTime: 60,
+            challengeTargetPairs: 6,
+            challengeDifficulty: 'all'
+        };
+
+        const gameBoard = document.getElementById('gameBoard');
+        const scoreElement = document.getElementById('score');
+        const timerElement = document.getElementById('timer');
+        const remainingElement = document.getElementById('remaining');
+        const restartBtn = document.getElementById('restartBtn');
+        const gameOverModal = document.getElementById('gameOverModal');
+        const finalScoreElement = document.getElementById('finalScore');
+        const gameResultElement = document.getElementById('gameResult');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+        const difficultyBtns = document.querySelectorAll('.difficulty-btn');
+        const customWordsSection = document.getElementById('customWordsSection');
+        const customWordsInput = document.getElementById('customWordsInput');
+        const customTimeInput = document.getElementById('customTimeInput');
+        const customPairsInput = document.getElementById('customPairsInput');
+        const startCustomGameBtn = document.getElementById('startCustomGameBtn');
+        const customSettingsSection = document.getElementById('customSettingsSection');
+        const customRandomTimeInput = document.getElementById('customRandomTimeInput');
+        const customRandomPairsInput = document.getElementById('customRandomPairsInput');
+        const wordDifficultySelect = document.getElementById('wordDifficultySelect');
+        const startCustomRandomGameBtn = document.getElementById('startCustomRandomGameBtn');
+        const challengeSettingsSection = document.getElementById('challengeSettingsSection');
+        const challengeTimeInput = document.getElementById('challengeTimeInput');
+        const challengeTargetPairsInput = document.getElementById('challengeTargetPairsInput');
+        const challengeDifficultySelect = document.getElementById('challengeDifficultySelect');
+        const startChallengeGameBtn = document.getElementById('startChallengeGameBtn');
+        const wordInfoModal = document.getElementById('wordInfoModal');
+        const wordInfoTitle = document.getElementById('wordInfoTitle');
+        const wordInfoContent = document.getElementById('wordInfoContent');
+        const closeWordInfoBtn = document.getElementById('closeWordInfoBtn');
+
+        function initGame() {
+            let pairCount = 8;
+            let gameTime = 60;
+            
+            if (gameState.level === 'bronze') {
+                pairCount = 4;
+                gameTime = 60;
+            } else if (gameState.level === 'silver') {
+                pairCount = 6;
+                gameTime = 60;
+            } else if (gameState.level === 'gold') {
+                pairCount = 8;
+                gameTime = 60;
+            } else if (gameState.level === 'custom') {
+                pairCount = Math.min(gameState.customPairs, gameState.customWords.length);
+                gameTime = gameState.customTime;
+            } else if (gameState.level === 'custom-random') {
+                pairCount = gameState.customRandomPairs;
+                gameTime = gameState.customRandomTime;
+            } else if (gameState.level === 'challenge') {
+                pairCount = gameState.challengeTargetPairs + 2;
+                gameTime = gameState.challengeTime;
+            }
+
+            gameState.score = 0;
+            gameState.timeLeft = gameTime;
+            gameState.remainingPairs = pairCount;
+            gameState.flippedCards = [];
+            gameState.matchedPairs = 0;
+            gameState.isProcessing = false;
+            gameState.timerStarted = false;
+
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+                gameState.timerInterval = null;
+            }
+
+            scoreElement.textContent = gameState.score;
+            timerElement.textContent = gameState.timeLeft;
+            remainingElement.textContent = gameState.remainingPairs;
+
+            generateCards(pairCount);
+        }
+
+        function generateCards(pairCount) {
+            gameBoard.innerHTML = '';
+
+            let selectedWords;
+            if (gameState.level === 'custom') {
+                selectedWords = gameState.customWords.slice(0, pairCount);
+            } else if (gameState.level === 'challenge') {
+                let filteredWords = wordLibrary;
+                if (gameState.challengeDifficulty !== 'all') {
+                    filteredWords = wordLibrary.filter(word => word.difficulty === gameState.challengeDifficulty);
+                }
+                
+                const shuffledLibrary = [...filteredWords];
+                shuffleArray(shuffledLibrary);
+                selectedWords = shuffledLibrary.slice(0, pairCount);
+            } else {
+                let filteredWords = wordLibrary;
+                if (gameState.wordDifficulty !== 'all') {
+                    filteredWords = wordLibrary.filter(word => word.difficulty === gameState.wordDifficulty);
+                }
+                
+                const shuffledLibrary = [...filteredWords];
+                shuffleArray(shuffledLibrary);
+                selectedWords = shuffledLibrary.slice(0, pairCount);
+            }
+
+            const cards = [];
+            selectedWords.forEach(word => {
+                cards.push({
+                    id: `en-${word.english}`,
+                    text: word.english,
+                    type: 'english',
+                    pairId: word.chinese
+                });
+                cards.push({
+                    id: `zh-${word.chinese}`,
+                    text: word.chinese,
+                    type: 'chinese',
+                    pairId: word.english
+                });
+            });
+
+            shuffleArray(cards);
+
+            cards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.dataset.id = card.id;
+                cardElement.dataset.type = card.type;
+                cardElement.dataset.pairId = card.pairId;
+                cardElement.textContent = card.text;
+                cardElement.addEventListener('click', handleCardClick);
+                if (card.type === 'english') {
+                    cardElement.addEventListener('dblclick', () => showWordInfo(card.text));
+                }
+                cardElement.style.animationDelay = `${index * 0.05}s`;
+                gameBoard.appendChild(cardElement);
+            });
+        }
+
+        function handleCardClick(e) {
+            if (gameState.isProcessing) return;
+
+            const card = e.target;
+            
+            if (card.classList.contains('matched') || card.classList.contains('flipped')) {
+                return;
+            }
+
+            if (!gameState.timerStarted) {
+                gameState.timerStarted = true;
+                startTimer();
+            }
+
+            card.classList.add('flipped');
+            gameState.flippedCards.push(card);
+
+            if (gameState.flippedCards.length === 2) {
+                gameState.isProcessing = true;
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const [card1, card2] = gameState.flippedCards;
+            const isMatch = card1.dataset.pairId === card2.textContent || card2.dataset.pairId === card1.textContent;
+
+            if (isMatch) {
+                setTimeout(() => {
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    gameState.matchedPairs++;
+                    gameState.score += 10;
+                    gameState.remainingPairs--;
+                    
+                    scoreElement.textContent = gameState.score;
+                    remainingElement.textContent = gameState.remainingPairs;
+                    
+                    if (gameState.remainingPairs === 0) {
+                        endGame(true);
+                    }
+                    
+                    gameState.flippedCards = [];
+                    gameState.isProcessing = false;
+                }, 300);
+            } else {
+                setTimeout(() => {
+                    card1.classList.add('wrong');
+                    card2.classList.add('wrong');
+                    
+                    setTimeout(() => {
+                        card1.classList.remove('flipped', 'wrong');
+                        card2.classList.remove('flipped', 'wrong');
+                        gameState.flippedCards = [];
+                        gameState.isProcessing = false;
+                    }, 300);
+                }, 100);
+            }
+        }
+
+        function startTimer() {
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+            }
+
+            gameState.timerInterval = setInterval(() => {
+                gameState.timeLeft--;
+                timerElement.textContent = gameState.timeLeft;
+                
+                if (gameState.timeLeft <= 0) {
+                    endGame(false);
+                }
+            }, 1000);
+        }
+
+        function endGame(isVictory) {
+            clearInterval(gameState.timerInterval);
+            
+            finalScoreElement.textContent = gameState.score;
+            
+            if (gameState.level === 'challenge') {
+                if (isVictory) {
+                    gameResultElement.textContent = `恭喜！你在规定时间内完成了 ${gameState.challengeTargetPairs} 对配对！`;
+                } else {
+                    const completion = gameState.matchedPairs;
+                    const target = gameState.challengeTargetPairs;
+                    if (completion >= target) {
+                        gameResultElement.textContent = `完成 ${completion} 对配对，挑战成功！`;
+                    } else {
+                        gameResultElement.textContent = `完成 ${completion}/${target} 对配对，未达到目标。`;
+                    }
+                }
+            } else if (isVictory) {
+                gameResultElement.textContent = '恭喜你，完成了所有配对！';
+            } else {
+                gameResultElement.textContent = '时间到，游戏结束！';
+            }
+            gameOverModal.classList.add('active');
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        async function fetchWordInfo(word) {
+            try {
+                const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+                if (!response.ok) {
+                    throw new Error('单词查询失败');
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('获取单词信息失败:', error);
+                throw error;
+            }
+        }
+
+        async function showWordInfo(word) {
+            wordInfoTitle.textContent = word;
+            wordInfoContent.innerHTML = '<div style="text-align: center; padding: 20px;"><div style="font-size: 2rem; margin-bottom: 10px;">🔍</div><p>正在查询单词信息...</p></div>';
+            wordInfoModal.classList.add('active');
+
+            try {
+                const data = await fetchWordInfo(word);
+                renderWordInfo(data, word);
+            } catch (error) {
+                renderWordError(word);
+            }
+        }
+
+        function renderWordInfo(data, word) {
+            let html = '';
+            
+            const phonetic = data[0].phonetics.find(p => p.audio) || data[0].phonetics[0];
+            
+            if (phonetic) {
+                html += `
+                    <div class="word-phonetic">
+                        <span class="phonetic">${phonetic.text || ''}</span>
+                        ${phonetic.audio ? `
+                            <button class="play-pronunciation" onclick="playPronunciation('${phonetic.audio}')">
+                                🔊
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+            }
+
+            html += '<div class="word-definitions">';
+            data[0].meanings.forEach(meaning => {
+                html += `
+                    <div class="definition-item">
+                        <div class="part-of-speech">${meaning.partOfSpeech}</div>
+                        ${meaning.definitions.map(def => `
+                            <div class="definition">${def.definition}</div>
+                            ${def.example ? `<div class="example">"${def.example}"</div>` : ''}
+                        `).join('')}
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            wordInfoContent.innerHTML = html;
+        }
+
+        function renderWordError(word) {
+            wordInfoContent.innerHTML = `
+                <div class="word-error">
+                    <div class="word-error-icon">❌</div>
+                    <h4>无法获取单词信息</h4>
+                    <p>无法查询单词 "${word}" 的信息，请检查网络连接或稍后再试。</p>
+                </div>
+            `;
+        }
+
+        function playPronunciation(audioUrl) {
+            const audio = new Audio(audioUrl);
+            audio.play().catch(error => {
+                console.error('播放发音失败:', error);
+                alert('无法播放发音，请检查网络连接');
+            });
+        }
+
+        restartBtn.addEventListener('click', initGame);
+        playAgainBtn.addEventListener('click', () => {
+            gameOverModal.classList.remove('active');
+            initGame();
+        });
+
+        closeWordInfoBtn.addEventListener('click', () => {
+            wordInfoModal.classList.remove('active');
+        });
+
+        wordInfoModal.addEventListener('click', (e) => {
+            if (e.target === wordInfoModal) {
+                wordInfoModal.classList.remove('active');
+            }
+        });
+
+        difficultyBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                difficultyBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                gameState.level = btn.dataset.level;
+                
+                if (gameState.level === 'custom') {
+                    customWordsSection.style.display = 'block';
+                    customSettingsSection.style.display = 'none';
+                    challengeSettingsSection.style.display = 'none';
+                    document.querySelector('.game-info').style.display = 'none';
+                    document.querySelector('.game-board').style.display = 'none';
+                    document.querySelector('.restart-btn').style.display = 'none';
+                    gameState.isCustomMode = true;
+                } else if (gameState.level === 'custom-random') {
+                    customSettingsSection.style.display = 'block';
+                    customWordsSection.style.display = 'none';
+                    challengeSettingsSection.style.display = 'none';
+                    document.querySelector('.game-info').style.display = 'none';
+                    document.querySelector('.game-board').style.display = 'none';
+                    document.querySelector('.restart-btn').style.display = 'none';
+                    gameState.isCustomMode = false;
+                } else if (gameState.level === 'challenge') {
+                    challengeSettingsSection.style.display = 'block';
+                    customSettingsSection.style.display = 'none';
+                    customWordsSection.style.display = 'none';
+                    document.querySelector('.game-info').style.display = 'none';
+                    document.querySelector('.game-board').style.display = 'none';
+                    document.querySelector('.restart-btn').style.display = 'none';
+                    gameState.isCustomMode = false;
+                } else {
+                    customWordsSection.style.display = 'none';
+                    customSettingsSection.style.display = 'none';
+                    challengeSettingsSection.style.display = 'none';
+                    document.querySelector('.game-info').style.display = 'flex';
+                    document.querySelector('.game-board').style.display = 'grid';
+                    document.querySelector('.restart-btn').style.display = 'block';
+                    gameState.isCustomMode = false;
+                    initGame();
+                }
+            });
+        });
+
+        startCustomGameBtn.addEventListener('click', () => {
+            const inputText = customWordsInput.value.trim();
+            const customPairs = parseInt(customPairsInput.value);
+            
+            const lines = inputText.split('\n');
+            const customWords = [];
+
+            lines.forEach(line => {
+                const trimmedLine = line.trim();
+                if (trimmedLine) {
+                    const parts = trimmedLine.split(/[\s,]+/);
+                    if (parts.length >= 2) {
+                        const english = parts[0].trim();
+                        const chinese = parts.slice(1).join(' ').trim();
+                        customWords.push({ english, chinese });
+                    }
+                }
+            });
+
+            if (customWords.length < customPairs) {
+                const usedEnglishWords = new Set(customWords.map(word => word.english.toLowerCase()));
+                
+                const availableWords = wordLibrary.filter(word => !usedEnglishWords.has(word.english.toLowerCase()));
+                
+                shuffleArray(availableWords);
+                
+                const neededPairs = customPairs - customWords.length;
+                
+                const actualNeeded = Math.min(neededPairs, availableWords.length);
+                
+                const confirmMessage = `您输入了 ${customWords.length} 对单词，但设置了 ${customPairs} 对。\n\n是否从默认单词库中随机补充 ${actualNeeded} 对单词？`;
+                
+                if (confirm(confirmMessage)) {
+                    for (let i = 0; i < actualNeeded; i++) {
+                        customWords.push(availableWords[i]);
+                    }
+                    
+                    gameState.customPairs = customWords.length;
+                } else {
+                    gameState.customPairs = customWords.length;
+                }
+            } else {
+                gameState.customPairs = customPairs;
+            }
+
+            gameState.customWords = customWords;
+            gameState.customTime = parseInt(customTimeInput.value);
+            
+            customWordsSection.style.display = 'none';
+            document.querySelector('.game-info').style.display = 'flex';
+            document.querySelector('.game-board').style.display = 'grid';
+            document.querySelector('.restart-btn').style.display = 'block';
+            
+            initGame();
+        });
+
+        startCustomRandomGameBtn.addEventListener('click', () => {
+            const customRandomPairs = parseInt(customRandomPairsInput.value);
+            const selectedDifficulty = wordDifficultySelect.value;
+            
+            let filteredWords = wordLibrary;
+            if (selectedDifficulty !== 'all') {
+                filteredWords = wordLibrary.filter(word => word.difficulty === selectedDifficulty);
+            }
+            
+            if (customRandomPairs > filteredWords.length) {
+                alert(`选择的难度下单词对数不能超过${filteredWords.length}对`);
+                return;
+            }
+
+            gameState.customRandomTime = parseInt(customRandomTimeInput.value);
+            gameState.customRandomPairs = customRandomPairs;
+            gameState.wordDifficulty = selectedDifficulty;
+            
+            customSettingsSection.style.display = 'none';
+            document.querySelector('.game-info').style.display = 'flex';
+            document.querySelector('.game-board').style.display = 'grid';
+            document.querySelector('.restart-btn').style.display = 'block';
+            
+            initGame();
+        });
+
+        startChallengeGameBtn.addEventListener('click', () => {
+            const challengeTargetPairs = parseInt(challengeTargetPairsInput.value);
+            const selectedDifficulty = challengeDifficultySelect.value;
+            
+            let filteredWords = wordLibrary;
+            if (selectedDifficulty !== 'all') {
+                filteredWords = wordLibrary.filter(word => word.difficulty === selectedDifficulty);
+            }
+            
+            const requiredPairs = challengeTargetPairs + 2;
+            if (requiredPairs > filteredWords.length) {
+                alert(`选择的难度下至少需要 ${requiredPairs} 对单词，当前只有 ${filteredWords.length} 对`);
+                return;
+            }
+
+            gameState.challengeTime = parseInt(challengeTimeInput.value);
+            gameState.challengeTargetPairs = challengeTargetPairs;
+            gameState.challengeDifficulty = selectedDifficulty;
+            
+            challengeSettingsSection.style.display = 'none';
+            document.querySelector('.game-info').style.display = 'flex';
+            document.querySelector('.game-board').style.display = 'grid';
+            document.querySelector('.restart-btn').style.display = 'block';
+            
+            initGame();
+        });
+
+        window.addEventListener('DOMContentLoaded', fetchWordData);
+    </script>
+</body>
+</html>
